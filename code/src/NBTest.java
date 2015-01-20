@@ -14,10 +14,6 @@ import java.util.*;
 public class NBTest {
     private final NBFeatureDictionary features;
 
-    // Set of all words (used for Laplace smoothing)
-    HashSet<String> dictionary = new HashSet<String>();
-
-
     public NBTest() {
         // TODO: Make these configurable
         String[] categories = {"ECAT", "CCAT", "GCAT", "MCAT"};
@@ -28,10 +24,6 @@ public class NBTest {
         // Measures of accuracy of model against test
         int correct = 0;
         int total = 0;
-
-        // Smoothing factors
-        int smoothingNum = 1;
-        int smoothingDenom = smoothingNum + features.dictionarySize();
 
         try {
             BufferedReader br = new BufferedReader(new FileReader(testFilename));
@@ -51,8 +43,8 @@ public class NBTest {
                     // Sum over Wi of p(W = wi | Y = label)
                     for (String token : tokens) {
                         int tokenCount = features.tokenFreqForLabel(token, curLabel);
-                        curProb += Math.log(((double) tokenCount + smoothingNum) /
-                                (features.numTokensForLabel(curLabel) + smoothingDenom));
+                        curProb += Math.log(((double) tokenCount + 1) /
+                                (features.numTokensForLabel(curLabel) + 1 + features.dictionarySize()));
                     }
 
                     if (curProb > bestProb) {

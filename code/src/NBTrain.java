@@ -9,8 +9,6 @@ import java.util.*;
  */
 public class NBTrain {
     private final NBFeatureDictionary features;
-    // #(Y = *)
-    int numDocs = 0;
 
     public NBTrain() {
         String[] categories = {"ECAT", "CCAT", "GCAT", "MCAT"};
