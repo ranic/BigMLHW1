@@ -8,15 +8,11 @@ import java.util.*;
  * Created by vijay on 1/12/15.
  */
 public class NBTrain {
-    private final Set<String> LABELS;
     private HashMap<String, Integer> eventCache;
     // TODO: Make this configurable
     private final int CACHE_LIMIT = 1000;
 
     NBTrain() {
-        String[] categories = {"ECAT", "CCAT", "GCAT", "MCAT"};
-        LABELS = new HashSet<String>(Arrays.asList(categories));
-
         eventCache = new HashMap<String, Integer>();
     }
 
@@ -37,11 +33,11 @@ public class NBTrain {
     }
 
     /**
-     * Helper method to flush the cache out to disk in the form "event<tab>count"
+     * Helper method to flush the cache out to disk in the form "event,count"
      */
     private void flushCache() {
         for (String key : eventCache.keySet()) {
-            System.out.println(key + "\t" + eventCache.get(key));
+            System.out.println(key + "," + eventCache.get(key));
         }
         eventCache = new HashMap<String, Integer>();
     }
@@ -58,18 +54,15 @@ public class NBTrain {
 
                 // Stream events corresponding to document to stdout
                 for (String label : labels) {
-                    // Ignore labels that we don't want to classify
-                    if (LABELS.contains(label)) {
-                        // #(Y = y) += 1
-                        cache("Y=" + label);
-                        // #(Y = *) += 1
-                        cache("Y=ANY");
-                        for (String token : tokens) {
-                            // #(Y = y, W = w) += 1
-                            cache("Y=" + label + ",W=" + token);
-                            // #(Y = y, W = *) += 1
-                            cache("Y=" + label + ",W=*");
-                        }
+                    // #(Y = y) += 1
+                    cache("Y=" + label);
+                    // #(Y = *) += 1
+                    cache("Y=ANY");
+                    for (String token : tokens) {
+                        // #(Y = y, W = w) += 1
+                        cache("W=" + token + " Y=" + label);
+                        // #(Y = y, W = *) += 1
+                        cache("W=*" + "Y=" + label);
                     }
                 }
             }
@@ -82,7 +75,6 @@ public class NBTrain {
     public static void main(String[] args) {
         NBTrain nb = new NBTrain();
         nb.train();
-        //nb.features.dump();
     }
 
 }
