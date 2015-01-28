@@ -46,6 +46,8 @@ public class NBUtils {
 
         command = String.format("mv sorted_%s %s", filename, filename);
         p = Runtime.getRuntime().exec(command);
+
+
         try {
             p.waitFor();
         } catch (InterruptedException e) {

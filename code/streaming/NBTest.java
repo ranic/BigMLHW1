@@ -16,6 +16,7 @@ import java.util.regex.Pattern;
 public class NBTest {
     private final NBFeatureDictionary features;
     private static final String COUNTS_TEMP_FILE = "counts_new.tmp";
+    private static final String CLASS_FREQUENCIES_FILE = "class_frequencies.tmp";
     private static final String REQUESTS_TEMP_FILE = "requests.tmp";
     private static final String MERGED_REQUESTS_FILE = "merged_requests.tmp";
     private static final String REQUESTS_BY_DOC_FILE = "requests_by_doc.tmp";
@@ -27,14 +28,16 @@ public class NBTest {
     }
 
     /* Converts the count structure C into C'. Reads C from stdin, writes C' out to COUNTS_TEMP_FILE */
-    private void reorganizeCounts() throws IOException {
+    private int reorganizeCounts() throws IOException {
         BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
         PrintWriter p = new PrintWriter(new File(COUNTS_TEMP_FILE));
+        PrintWriter classFrequencies = new PrintWriter(new File(CLASS_FREQUENCIES_FILE));
         Pattern wordCountLine = Pattern.compile("W=(\\S+) Y=(\\S+?),(\\d+)");
         List<String> events = null;
         String prevToken = null;
         String line, token;
         Matcher m;
+        int vocabSize = 0;
 
         // Collects (event,count) pairs by token
         while ((line = br.readLine()) != null) {
@@ -43,6 +46,7 @@ public class NBTest {
                 token = m.group(1);
 
                 if (token.equals("*")) {
+                    classFrequencies.write(line + "\n");
                     continue;
                 }
 
@@ -59,10 +63,13 @@ public class NBTest {
                     prevToken = token;
                     events = new LinkedList<String>();
                     events.add(line);
+                    vocabSize++;
                 }
             }
         }
         p.close();
+
+        return vocabSize;
     }
 
     /* Writes "requests" of the form (token, docId) to REQUESTS_TEMP_FILE */
@@ -124,6 +131,14 @@ public class NBTest {
                 requestedToken = requestMatcher.group(1);
                 requestingDocId = requestMatcher.group(2);
 
+                if (token != null) {
+                    if (token.equals(requestedToken)) {
+                        pw.write(String.format("%s\t%s\t%s\n", requestingDocId, requestedToken, wordCount));
+                    } else {
+                        // There is no training data for this token, omit wordCount
+                        pw.write(String.format("%s\t%s\t\n", requestingDocId, requestedToken));
+                    }
+                }
                 if (token != null && token.equals(requestedToken)) {
                     pw.write(String.format("%s\t%s\t%s\n", requestingDocId, requestedToken, wordCount));
                 }
@@ -132,7 +147,20 @@ public class NBTest {
 
         pw.close();
 
-        NBUtils.sortFile(REQUESTS_BY_DOC_FILE, "-k1,1");
+        // Sort by doc ID number
+        NBUtils.sortFile(REQUESTS_BY_DOC_FILE, "-n -k1,1");
+    }:q
+
+    /* Streams through REQUESTS_BY_DOC_FILE and classifies using the available data */
+    private void classify(int vocabSize) throws IOException {
+        BufferedReader br = new BufferedReader(new FileReader(REQUESTS_BY_DOC_FILE));
+        String line;
+
+        while ((line = br.readLine()) != null) {
+            // Line is of the form <docId>  <token> <event1,count1>...
+
+        }
+
     }
 
     public void test(String testFilename) {
@@ -188,10 +216,11 @@ public class NBTest {
             System.out.println("Usage: cat train.txt | java src.NBTrain | java src.NBTest test.txt");
             return;
         }
-        nb.reorganizeCounts();
+        int vocabSize = nb.reorganizeCounts();
         nb.generateRequests(args[0]);
         nb.mergeRequestsAndCounts();
         nb.generateReplies();
+        nb.classify(vocabSize);
 
         //nb.test(args[0]);
     }

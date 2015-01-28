@@ -62,7 +62,7 @@ public class NBTrain {
                         // #(Y = y, W = w) += 1
                         cache("W=" + token + " Y=" + label);
                         // #(Y = y, W = *) += 1
-                        cache("W=*" + "Y=" + label);
+                        cache("W=*" + " Y=" + label);
                     }
                 }
             }
